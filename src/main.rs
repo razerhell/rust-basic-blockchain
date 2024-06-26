@@ -86,8 +86,13 @@ impl Blockchain {
 
     fn is_chain_valid(&self) -> bool {
         for (i, block) in self.chain.iter().enumerate() {
-            if i > 0 && block.previous_hash != self.chain[i - 1].hash {
-                return false;
+            if i > 0 {
+                if !is_mine_hash(&block.hash) {
+                    return false;
+                }
+                if block.previous_hash != self.chain[i - 1].hash {
+                    return false;
+                }
             }
             if block.hash_block() != block.hash {
                 return false;
@@ -106,13 +111,17 @@ impl Blockchain {
         let mut nonce = 0;
         let timestamp = chrono::Utc::now().timestamp();
         let mut block = Block::new(index, timestamp as u64, transactions, previous_hash, nonce);
-        while &block.hash[0..2] != "00" {
+        while !is_mine_hash(&block.hash) {
             nonce += 1;
             block.nonce = nonce;
             block.hash = block.hash_block();
         }
         block
     }
+}
+
+fn is_mine_hash(hash: &str) -> bool {
+    hash.len() > 2 && &hash[0..2] == "00"
 }
 
 fn main() {
